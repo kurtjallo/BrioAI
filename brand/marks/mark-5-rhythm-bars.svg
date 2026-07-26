@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 161">
+<!-- SVG created with Arrow, by QuiverAI (https://quiver.ai) -->
+  <style type="text/css">.cls-0 {fill:#F8F8F9;}
+.cls-1 {fill:none;stroke:#EC74A2;stroke-width:5;stroke-miterlimit:10;}
+.cls-2 {fill:#FAEDD2;}
+.cls-3 {fill:#0B1736;}
+.cls-4 {fill:#FBCC22;}
+.cls-5 {fill:#15499C;}
+.cls-6 {fill:#0E1A39;}</style>
+  <polyline class="cls-1" points="30 92.5 74.9 108.2 120 93"/>
+  <path class="cls-2" d="m28 42.9c-8.9 0-17 7.2-17 15.9v2l34 0.2v-2c0-8.9-8.3-16.1-17-16.1z"/>
+  <path class="cls-2" d="m122 42.9c-8.9 0-16.7 7.2-16.7 16.1h34.3v-1.1c0.1-7.8-7.7-15-17.6-15z"/>
+  <path class="cls-4" d="m75 11.8c-8.7 0-16.6 7.2-16.6 15.7v3.5h33.6v-4.1c-0.7-7.9-8.6-15.1-17-15.1z"/>
+  <path class="cls-5" d="m75 15c-8.7 0-16.6 7.3-16.6 16.3v102.1c0 7.8 6.6 16 16.4 16 4.9 0 8.7-1.3 11.9-4.2 3.2-2.8 5.1-6.9 5.1-11.7v-102.2c0-7.9-7.2-16.3-16.8-16.3z"/>
+  <path class="cls-6" d="m28 46c-9.2 0-17 7.6-17 16.5v39.1c0 8.3 6.2 17.1 17 17.1 10 0 16.8-7.1 16.8-17v-39.2c-0.5-8.2-7.5-16.5-16.8-16.5z"/>
+  <path class="cls-3" d="m122 46c-9 0-17.3 7.6-17.3 16.7v39c0 8.2 6.3 17 17.4 17 8.9 0 17.1-6.4 17.1-16.9v-39.3c0-8.2-7.2-16.5-17.2-16.5z"/>
+</svg>

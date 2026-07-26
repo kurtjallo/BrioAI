@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+tmp/
+out-tsc/
+*.tsbuildinfo
+.expo/
+.expo-shared/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# Secrets — never commit these
+.env
+.env.*.local
+
+# Caches
+.cache/
+/.sass-cache/
+/coverage/
+
+# Logs
+*.log
+
+# Editors
+/.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.sublime-workspace
+.project
+.classpath
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
