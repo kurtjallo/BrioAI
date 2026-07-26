@@ -28,46 +28,27 @@
 minimumReleaseAge: 1440
 
 minimumReleaseAgeExclude:
-  # These are published by Replit and trusted — the supply-chain attack vector
-  # this setting guards against does not apply to our own packages.
+  # Add a package name here only to bypass the delay above for an urgent fix,
+  # and remove it once the 1-day window has passed.
 
 packages:
-  - artifacts/*
-  - lib/*
-  - lib/integrations/*
+  # mobile/ is the only pnpm package. api/ is Python (see pyproject.toml).
+  - mobile
 
 catalog:
-  '@tailwindcss/vite': ^4.1.14
   '@tanstack/react-query': ^5.90.21
-  '@types/node': ^25.3.3
-  '@types/react': ^19.2.0
-  '@types/react-dom': ^19.2.0
-  '@vitejs/plugin-react': ^5.0.4
-  class-variance-authority: ^0.7.1
-  clsx: ^2.1.1
-  drizzle-orm: ^0.45.2
-  framer-motion: ^12.23.24
-  lucide-react: ^0.545.0
   # Must be this exact version because expo requires it
   react: 19.1.0
   # Must be this exact version because expo requires it
   react-dom: 19.1.0
-  tailwind-merge: ^3.3.1
-  tailwindcss: ^4.1.14
-  tsx: ^4.21.0
-  vite: ^7.3.2
-  wouter: ^3.3.5
-  zod: ^3.25.76
 
 autoInstallPeers: false
 
 onlyBuiltDependencies:
-  - '@swc/core'
   - esbuild
-  - msw
-  - unrs-resolver
 
 overrides:
-  # drizzle-kit uses esbuild internally on an older version that's vulnerable, this overrides it
-  "@esbuild-kit/esm-loader": "npm:tsx@^4.21.0"
+  # Pins the esbuild that arrives transitively under expo/metro to a version
+  # without the known advisory. Originally added for drizzle-kit, which this
+  # repo no longer depends on; kept because expo still pulls esbuild in.
   esbuild: "0.27.3"

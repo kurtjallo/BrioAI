@@ -32,20 +32,19 @@ cp .env.example .env        # add DEEPGRAM_API_KEY and GEMINI_API_KEY
 
 ```bash
 # API
-uv run uvicorn main:app --port 8080 --app-dir artifacts/api-server --reload
+uv run uvicorn main:app --port 8080 --app-dir api --reload
 
 # App (LAN IP, not localhost — on a device, localhost is the phone)
-cd artifacts/mobile && EXPO_PUBLIC_API_URL=http://<LAN-IP>:8080 pnpm dev
+cd mobile && EXPO_PUBLIC_API_URL=http://<LAN-IP>:8080 pnpm dev
 ```
 
 ## Layout
 
 ```
-artifacts/mobile/       Expo app (expo-router, expo-audio)
-artifacts/api-server/   FastAPI — main.py, asr.py, metrics.py
-artifacts/mockup-sandbox/  Vite sandbox for brand boards
-brand/                  Logo, marks, tokens, brand book
-docs/                   Product brief, onboarding spec, ASR research, architecture
+mobile/    Expo app (expo-router, expo-audio) — the only pnpm package
+api/       FastAPI — main.py, asr.py, metrics.py; deps in the root pyproject.toml
+brand/     Logo, marks, tokens, brand book
+docs/      Product brief, onboarding spec, ASR research, architecture
 ```
 
 `CLAUDE.md` is the working reference. `PRD.md` is the product spec — note it describes a **target** architecture (Postgres, Celery, R2) that doesn't exist yet.

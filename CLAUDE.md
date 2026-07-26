@@ -9,27 +9,30 @@ A daily speaking-practice mobile app: record a 60-second answer to a daily promp
 ## Layout
 
 ```
-artifacts/mobile/          Expo app (@workspace/mobile)
+mobile/                    Expo app (@cadence/mobile)
   app/                     expo-router screens: (tabs)/{index,practice,history,trends}.tsx,
                            recording.tsx, results/[id].tsx, onboarding.tsx, settings.tsx
   components/              Illustrations.tsx (blobs/squiggles + CadenceLogo), RecordButton,
-                           WaveformVisualizer, MetricCard, SessionCard, WordUpgradeCard
+                           WaveformVisualizer, SessionCard, WordUpgradeCard,
+                           ErrorBoundary, ErrorFallback
   constants/colors.ts      Design-system palette (light + dark) — the source of truth
   contexts/                Session, Onboarding, Theme, Word providers
   utils/                   api.ts, storage.ts (AsyncStorage), prompts.ts, words.ts,
-                           spaced-repetition.ts, notifications.ts
-artifacts/api-server/main.py   FastAPI: GET /api/healthz, POST /api/analyze
-artifacts/mockup-sandbox/      Vite + React sandbox (@workspace/mockup-sandbox) —
-                               4 brand boards, 8 source files, 12 deps. The app does
-                               NOT import it. 55 unused shadcn components and 46 deps
-                               were removed; don't re-add a UI kit for static boards.
+                           spaced-repetition.ts, notifications.ts, settings.ts, mockData.ts
+  scripts/build.js         Static web build; server/serve.js serves it (pnpm build / serve)
+api/                       FastAPI — main.py (routing), asr.py (provider), metrics.py
 brand/kit/                 Logo SVG/PNG, favicons, social, print, tokens, brand book PDF
 brand/marks/               Raw generated logo SVGs (mark-4-asterisk.svg is the chosen mark)
 docs/                      product-brief.md, onboarding-spec.md, design-direction.md,
-                           design-references/, architecture.png
+                           asr-research.md, design-references/, architecture.png
 ```
 
-pnpm workspace (`artifacts/*` only). Python deps live in the **root** `pyproject.toml`, managed with `uv`.
+Flat by design — three top-level dirs, no container. This used to be `artifacts/*`, a Replit
+scaffold word meaning "app the agent generated"; it said nothing about this project. The
+scaffold also left `lib/*` globs pointing at directories that never existed, a catalog of
+mostly-unused deps, and a Metro blockList for an `openai` package that was never a dependency.
+All removed. `mobile/` is the only pnpm package; Python deps live in the **root**
+`pyproject.toml`, managed with `uv`.
 
 ## Running locally (macOS)
 
@@ -37,23 +40,28 @@ Setup once: `pnpm install` and `uv sync` from the repo root.
 
 **API server** (port 8080) — run from the repo root so `uv` finds the root `pyproject.toml`:
 ```
-uv run uvicorn main:app --host 0.0.0.0 --port 8080 --app-dir artifacts/api-server --reload
+uv run uvicorn main:app --host 0.0.0.0 --port 8080 --app-dir api --reload
 ```
 Needs `DEEPGRAM_API_KEY` and `GEMINI_API_KEY` in a gitignored `.env` at the repo root (see `.env.example`), loaded via python-dotenv. Without them `/api/analyze` returns 502 (ASR) or 500 (analyst) with the reason in the log; `/api/healthz` still works and reports both active models.
 
 **Mobile app** — point it at the API with `EXPO_PUBLIC_API_URL`, a **full origin including the scheme**:
 ```
-cd artifacts/mobile && EXPO_PUBLIC_API_URL=http://<your-LAN-IP>:8080 pnpm dev
+cd mobile && EXPO_PUBLIC_API_URL=http://<your-LAN-IP>:8080 pnpm dev
 ```
 On a physical device `localhost` means the phone, not your Mac, so use the LAN IP (`ipconfig getifaddr en0`). The simulator can use `http://localhost:8080`. `EXPO_PUBLIC_DOMAIN` still works for hosted deploys. With neither set, `getBaseUrl()` throws a message naming the fix rather than silently fetching `https://undefined`.
 
-**Mockup sandbox** (port 8082, brand boards only — the app does not import it):
-```
-pnpm --filter @workspace/mockup-sandbox run dev
-```
-`PORT` and `BASE_PATH` default to 8082 and `/`. 8082 avoids Metro's 8081.
+**Brand reference:** there is no longer a runnable sandbox. The four brand boards it rendered
+are committed as `brand/kit/cadence-brand-book.pdf` (5 pages: mark + rules, colour, type +
+voice, in-use + accessibility + print), with the five logo concepts as vectors in
+`brand/marks/`. The sandbox was a decision-making tool for a decision that is now closed, and
+it carried 46 hardcoded hex values that could silently drift from `constants/colors.ts`.
+**Don't rebuild it** — edit the palette in `colors.ts` and regenerate the PDF if the brand moves.
 
-**Typecheck:** `pnpm typecheck` from the root — green across both packages. (It used to fail in `mockup-sandbox` on `calendar.tsx`/`spinner.tsx`, where two copies of `@types/react` made `React.Ref` incompatible with itself; deleting the unused shadcn components removed the conflict.) There is still no typecheck, lint or import check for the Python backend.
+**Typecheck:** `pnpm typecheck` from the root — green. `mobile/` is the only package with a
+typecheck script. There is still no typecheck, lint or import check for the Python backend.
+
+**Dependency check:** `npx expo-doctor` from `mobile/` — currently 18/18. It validates peer
+deps that plain import-scanning misses, which is what makes it safe to prune `package.json`.
 
 ## Stack
 
@@ -76,9 +84,15 @@ Cream canvas `#FAF7F0`, white floating cards, ink navy `#1E2438` / text `#1B2033
 
 Dark mode is a separate blue-black palette in the same file, key-for-key symmetric and WCAG-tuned. Change colours in `constants/colors.ts`, never inline — and use `useColors()` rather than importing the palette directly.
 
-Official logo is the **Sticker Asterisk**: a multi-petal asterisk in yellow `#F4C744`, blue `#3D52B4`, pink `#E56D93` with a navy `#1E2438` centre, on cream `#FAF7F0`. Chosen from a 5-concept logo board; it echoes the StickerAsterisk illustration used throughout the UI. Regenerate raster icons (`artifacts/mobile/assets/images/icon.png`) from the SVG — **never edit the PNGs directly**.
+Official logo is the **Sticker Asterisk**: a multi-petal asterisk in yellow `#F4C744`, blue `#3D52B4`, pink `#E56D93` with a navy `#1E2438` centre, on cream `#FAF7F0`. Chosen from a 5-concept logo board; it echoes the StickerAsterisk illustration used throughout the UI. Regenerate raster icons (`mobile/assets/images/icon.png`) from the SVG — **never edit the PNGs directly**.
 
-Three copies of that vector exist and the old notes disagreed about which is canonical: `CadenceLogo` in `components/Illustrations.tsx`, the `Asterisk` in the mockup-sandbox LogoBoard, and `brand/marks/mark-4-asterisk.svg` / `brand/kit/logo/svg/`. **Unresolved — pick one before editing the mark**, or the three will drift.
+**Two** copies of that vector exist, down from three — deleting the mockup-sandbox removed its
+`Asterisk` in LogoBoard. What remains: `CadenceLogo` in `mobile/components/Illustrations.tsx`
+(react-native-svg, what the app renders) and `brand/marks/mark-4-asterisk.svg` /
+`brand/kit/logo/svg/` (the exported kit). These are different formats for different consumers,
+so the duplication is defensible — but they are still hand-synced. **Still unresolved: nominate
+`brand/kit/logo/svg/cadence-mark-full-color.svg` as canonical and treat `CadenceLogo` as a
+derived transcription of it**, or the two will drift the way three did.
 
 Design origin and screen-level specs live in `docs/design-direction.md` and `docs/onboarding-spec.md`. The onboarding spec covers the 7-step flow, the results-screen ordering, and the four states every screen needs.
 
