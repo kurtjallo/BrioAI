@@ -1,8 +1,8 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { WordEntry } from '@/types';
-import { getWords, saveWords } from '@/utils/storage';
-import { getTodaysWord, WORD_BANK } from '@/utils/words';
-import { calculateNextReview, isDue, qualityFromResponseTime } from '@/utils/spaced-repetition';
+import { getWords, saveWords } from '@/services/storage';
+import { getTodaysWord, WORD_BANK } from '@/data/words';
+import { calculateNextReview, isDue, qualityFromResponseTime } from '@/lib/spaced-repetition';
 
 interface WordContextType {
   userWords: WordEntry[];

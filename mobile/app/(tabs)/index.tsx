@@ -8,7 +8,7 @@ import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
 import { cardShadow, type } from '@/constants/colors';
 import { useSession } from '@/contexts/SessionContext';
-import { getTodaysPrompt, formatDate } from '@/utils/prompts';
+import { getTodaysPrompt, formatDate } from '@/data/prompts';
 import { Blob1, CadenceLogo, Sparkle, StickerAsterisk } from '@/components/Illustrations';
 
 export default function TodayScreen() {

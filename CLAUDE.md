@@ -13,19 +13,34 @@ mobile/                    Expo app (@cadence/mobile)
   app/                     expo-router screens: (tabs)/{index,practice,history,trends}.tsx,
                            recording.tsx, results/[id].tsx, onboarding.tsx, settings.tsx
   components/              Illustrations.tsx (blobs/squiggles + CadenceLogo), RecordButton,
-                           WaveformVisualizer, SessionCard, WordUpgradeCard,
+                           WaveformVisualizer, SessionCard, WordUpgradeCard, ClinicalNote,
                            ErrorBoundary, ErrorFallback
   constants/colors.ts      Design-system palette (light + dark) — the source of truth
   contexts/                Session, Onboarding, Theme, Word providers
-  utils/                   api.ts, storage.ts (AsyncStorage), prompts.ts, words.ts,
-                           spaced-repetition.ts, notifications.ts, settings.ts, mockData.ts
-  scripts/build.js         Static web build; server/serve.js serves it (pnpm build / serve)
+  services/                Anything that touches the outside world: api.ts (network),
+                           storage.ts (sessions + words in AsyncStorage), preferences.ts
+                           (onboarding flag, speaking context, reminder time),
+                           notifications.ts (OS scheduling)
+  data/                    Content shipped with the app: prompts.ts, words.ts,
+                           sample-sessions.ts (onboarding's first session + the 15-session
+                           sample history behind Settings → Load sample data)
+  lib/                     Pure functions, no I/O: spaced-repetition.ts
+  scripts/build.js         Static web build; web-preview/serve.js serves it (pnpm build / serve)
 api/                       FastAPI — main.py (routing), asr.py (provider), metrics.py
 brand/kit/                 Logo SVG/PNG, favicons, social, print, tokens, brand book PDF
 brand/marks/               Raw generated logo SVGs (mark-4-asterisk.svg is the chosen mark)
 docs/                      product-brief.md, onboarding-spec.md, design-direction.md,
                            asr-research.md, design-references/, architecture.png
 ```
+
+**File-naming rules.** Components are `PascalCase.tsx`; every other module is `kebab-case.ts`.
+Inside `app/` the filename *is* the route — `[id].tsx` is expo-router's dynamic segment
+(`/results/:id`, read via `useLocalSearchParams`), `(tabs)` is a group that does **not** appear
+in the URL, `_layout.tsx` is a layout, `+not-found.tsx` is the 404. **Never rename anything in
+`app/` for readability** — you are editing URLs, and `results/[id].tsx` → `results/session.tsx`
+silently breaks opening a specific result. Everywhere else, prefer the honest name:
+`services/` for I/O, `data/` for shipped content, `lib/` for pure functions. There is no
+`utils/`; it was a junk drawer holding all four kinds at once.
 
 Flat by design — three top-level dirs, no container. This used to be `artifacts/*`, a Replit
 scaffold word meaning "app the agent generated"; it said nothing about this project. The

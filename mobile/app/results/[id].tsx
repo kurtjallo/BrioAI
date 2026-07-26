@@ -10,6 +10,7 @@ import { cardShadow, type } from '@/constants/colors';
 import { useSession } from '@/contexts/SessionContext';
 import { useWords } from '@/contexts/WordContext';
 import WordUpgradeCard from '@/components/WordUpgradeCard';
+import ClinicalNote from '@/components/ClinicalNote';
 import { Blob2, Squiggle, StickerAsterisk } from '@/components/Illustrations';
 
 export default function ResultsScreen() {
@@ -266,6 +267,8 @@ export default function ResultsScreen() {
             )}
           </View>
         </Section>
+
+        <ClinicalNote />
 
         {isOnboarding && (
           <Pressable

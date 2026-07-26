@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { isOnboardingDone, setOnboardingDone } from '@/utils/settings';
+import { isOnboardingDone, setOnboardingDone } from '@/services/preferences';
 
 interface OnboardingContextType {
   /** null while the persisted flag is still loading. */

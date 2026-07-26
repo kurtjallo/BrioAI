@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "expo start",
     "build": "node scripts/build.js",
-    "serve": "node server/serve.js",
+    "serve": "node web-preview/serve.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "dev:tunnel": "expo start --tunnel"
   },

@@ -8,11 +8,11 @@ import Animated, { FadeIn, FadeInDown, FadeInUp, FadeOut, ZoomIn } from 'react-n
 import { useColors } from '@/hooks/useColors';
 import { cardShadow, type } from '@/constants/colors';
 import { useSession } from '@/contexts/SessionContext';
-import { CONTEXT_PROMPTS } from '@/utils/prompts';
-import { buildFirstSession } from '@/utils/mockData';
+import { CONTEXT_PROMPTS } from '@/data/prompts';
+import { buildFirstSession } from '@/data/sample-sessions';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { setNotificationTime, setSpeakingContext, SpeakingContext } from '@/utils/settings';
-import { scheduleDailyReminder } from '@/utils/notifications';
+import { setNotificationTime, setSpeakingContext, SpeakingContext } from '@/services/preferences';
+import { scheduleDailyReminder } from '@/services/notifications';
 import { Blob1, Blob2, CadenceLogo, Sparkle, Squiggle, StickerAsterisk } from '@/components/Illustrations';
 
 type Step = 'frame' | 'context' | 'record' | 'time' | 'save';

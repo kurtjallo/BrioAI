@@ -1,5 +1,5 @@
 import { Analysis, Session } from '@/types';
-import { PROMPTS } from './prompts';
+import { PROMPTS } from '@/data/prompts';
 
 /**
  * Realistic sample content for previewing every screen state.

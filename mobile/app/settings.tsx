@@ -9,8 +9,9 @@ import { useTheme, type ThemeMode } from '@/contexts/ThemeContext';
 import { cardShadow } from '@/constants/colors';
 import { useSession } from '@/contexts/SessionContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { formatTimeLabel, getNotificationTime, setNotificationTime } from '@/utils/settings';
-import { scheduleDailyReminder } from '@/utils/notifications';
+import { formatTimeLabel, getNotificationTime, setNotificationTime } from '@/services/preferences';
+import { scheduleDailyReminder } from '@/services/notifications';
+import ClinicalNote from '@/components/ClinicalNote';
 
 const TIME_OPTIONS = ['07:30', '08:30', '12:30', '17:30', '19:00', '21:00'];
 
@@ -202,6 +203,8 @@ export default function SettingsScreen() {
             }}
           />
         </View>
+
+        <ClinicalNote />
       </ScrollView>
     </View>
   );

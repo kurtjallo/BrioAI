@@ -6,8 +6,8 @@ import {
   clearSessions as storeClearSessions,
   getSessions,
   replaceSessions,
-} from '@/utils/storage';
-import { buildSampleSessions } from '@/utils/mockData';
+} from '@/services/storage';
+import { buildSampleSessions } from '@/data/sample-sessions';
 
 interface SessionContextType {
   sessions: Session[];

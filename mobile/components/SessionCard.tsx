@@ -4,7 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import { useColors } from '@/hooks/useColors';
 import { cardShadow } from '@/constants/colors';
 import { Session } from '@/types';
-import { formatShortDate } from '@/utils/prompts';
+import { formatShortDate } from '@/data/prompts';
 
 interface SessionCardProps {
   session: Session;

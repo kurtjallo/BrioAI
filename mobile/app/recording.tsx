@@ -11,7 +11,7 @@ import { CADENCE_RECORDING } from '@/constants/recording';
 import { useSession } from '@/contexts/SessionContext';
 import RecordButton from '@/components/RecordButton';
 import WaveformVisualizer from '@/components/WaveformVisualizer';
-import { analyzeRecording } from '@/utils/api';
+import { analyzeRecording } from '@/services/api';
 import { Session } from '@/types';
 import { Sparkle, Blob1 } from '@/components/Illustrations';
 
