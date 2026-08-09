@@ -2,16 +2,54 @@
 
 A daily speaking-practice mobile app: record a 60-second answer to a daily prompt, get AI feedback on word choice and structure — deliberately **not** filler-word coaching.
 
-- **Product source of truth:** `PRD.md` (goals, features, data model, target architecture)
-- **Architecture diagram:** `docs/architecture.png` (also inlined as mermaid in PRD §9)
-- PRD §9 describes the *target* architecture (Railway, Postgres, Celery, R2). What exists today is one FastAPI endpoint plus AsyncStorage on device. Don't treat the PRD stack table as current state.
+## Document roles
+
+- **Product scope and production-MVP architecture:** `PRD.md`. Section 9 is authoritative.
+- **This file:** current repository state, engineering constraints, and agent
+  behaviour. It does not override product scope.
+- **Architecture diagram:** the mermaid and text in PRD §9 are authoritative.
+  `docs/architecture.png` is derived and must be regenerated when §9 changes.
+
+## Prototype today vs production MVP
+
+**Current repository:**
+
+- Expo app → synchronous `POST /api/analyze` → Deepgram → deterministic
+  `metrics.py` → Gemini text-only judge
+- Sessions and words in AsyncStorage; selected audio copied to
+  `documentDirectory/recordings/`
+- `SessionContext.todaysSession` currently treats one analyzed session as “done
+  for today” and blocks another from the Today screen
+- No Clerk, PostgreSQL, R2, Redis/Celery, `/api/v1`, durable upload outbox,
+  product analytics, backend tracing, or production deployment configuration
+
+**Approved target in PRD §9 — not built yet:**
+
+- Render: separate FastAPI web and Celery worker services, managed PostgreSQL,
+  and persistent Redis as broker only
+- Private R2 audio uploaded from the iPhone through short-lived signed URLs
+- Clerk verifies invite-only identity; a separate Cadence invitation/account
+  record gates provisioning and every authenticated API request
+- `/api/v1`; OpenAPI-generated mobile client
+- OpenAI production text analyst; Gemini development/test only and never given
+  customer content
+- TanStack Query for server state; Expo SQLite + Drizzle + SQLCipher for the
+  durable local outbox; SecureStore for tokens/keys; AsyncStorage only for
+  small non-sensitive preferences
+- Up to three new session IDs per account/local day; the first server-verified
+  upload marks activity, and analysis completion is not required for the day
+
+Do not describe target services as existing, and do not implement future
+architecture opportunistically outside the approved migration phase.
 
 ## Layout
 
 ```
 mobile/                    Expo app (@cadence/mobile)
   app/                     expo-router screens: (tabs)/{index,practice,history,trends}.tsx,
-                           recording.tsx, results/[id].tsx, onboarding.tsx, settings.tsx
+                           recording.tsx, results/[sessionId].tsx, onboarding.tsx, settings.tsx
+                           practice.tsx and trends.tsx are prototype-only; PRD defers
+                           vocabulary drills and performance charts beyond MVP
   components/              Illustrations.tsx (blobs/squiggles + CadenceLogo), RecordButton,
                            WaveformVisualizer, SessionCard, WordUpgradeCard, ClinicalNote,
                            ErrorBoundary, ErrorFallback
@@ -20,12 +58,18 @@ mobile/                    Expo app (@cadence/mobile)
   services/                Anything that touches the outside world: api.ts (network),
                            storage.ts (sessions + words in AsyncStorage), preferences.ts
                            (onboarding flag, speaking context, reminder time),
-                           notifications.ts (OS scheduling)
+                           notifications.ts (OS scheduling), recordings.ts (durable audio)
   data/                    Content shipped with the app: prompts.ts, words.ts,
                            sample-sessions.ts (onboarding's first session + the 15-session
                            sample history behind Settings → Load sample data)
-  lib/                     Pure functions, no I/O: spaced-repetition.ts
-  scripts/build.js         Static web build; web-preview/serve.js serves it (pnpm build / serve)
+                           sample-data controls must not ship in the production beta
+  lib/                     Pure functions, no I/O: dates.ts (local day keys),
+                           streak.ts, spaced-repetition.ts. The only tested code —
+                           *.test.ts here run under `pnpm test`.
+  hooks/useColors.ts       Theme-aware palette accessor — use this, never import colors
+  types/index.ts           Domain types (Session, Analysis, WordEntry) — imported as `@/types`
+  scripts/build.js         Static web build; web-preview/serve.js serves it (pnpm build / serve).
+                           Both are Replit-era and `pnpm build` fails outside Replit — unresolved.
 api/                       FastAPI — main.py (routing), asr.py (provider), metrics.py
 brand/kit/                 Logo SVG/PNG, favicons, social, print, tokens, brand book PDF
 brand/marks/               Raw generated logo SVGs (mark-4-asterisk.svg is the chosen mark)
@@ -33,16 +77,25 @@ docs/                      product-brief.md, onboarding-spec.md, design-directio
                            asr-research.md, design-references/, architecture.png
 ```
 
+Target-only directories such as `mobile/db/`, generated `/api/v1` client code,
+Alembic migrations, and worker modules do not exist yet. Add them only in the
+corresponding implementation phase; do not bend current files into pretending
+the migration is complete.
+
 **File-naming rules.** Components are `PascalCase.tsx`; every other module is `kebab-case.ts`.
-Inside `app/` the filename *is* the route — `[id].tsx` is expo-router's dynamic segment
-(`/results/:id`, read via `useLocalSearchParams`), `(tabs)` is a group that does **not** appear
-in the URL, `_layout.tsx` is a layout, `+not-found.tsx` is the 404. **Never rename anything in
-`app/` for readability** — you are editing URLs, and `results/[id].tsx` → `results/session.tsx`
-silently breaks opening a specific result. Everywhere else, prefer the honest name:
+Inside `app/` the filename *is* the route — `[sessionId].tsx` is expo-router's dynamic segment
+(`/results/:sessionId`, read via `useLocalSearchParams`), `(tabs)` is a group that does **not**
+appear in the URL, `_layout.tsx` is a layout, `+not-found.tsx` is the 404. **The punctuation is
+load-bearing, the words inside it are not.** Dropping the brackets — `results/[sessionId].tsx` →
+`results/session.tsx` — turns a dynamic route into a literal one and silently breaks opening a
+specific result. Renaming *within* the brackets is fine and encouraged when it adds meaning:
+`[id]` → `[sessionId]` was exactly that, and it means changing the `useLocalSearchParams` key
+plus every `pathname`/`params` call site to match (template-literal pushes like
+`` router.push(`/results/${id}`) `` are URL paths and need no change). Everywhere else, prefer the honest name:
 `services/` for I/O, `data/` for shipped content, `lib/` for pure functions. There is no
 `utils/`; it was a junk drawer holding all four kinds at once.
 
-Flat by design — three top-level dirs, no container. This used to be `artifacts/*`, a Replit
+Flat by design — four top-level dirs, no container. This used to be `artifacts/*`, a Replit
 scaffold word meaning "app the agent generated"; it said nothing about this project. The
 scaffold also left `lib/*` globs pointing at directories that never existed, a catalog of
 mostly-unused deps, and a Metro blockList for an `openai` package that was never a dependency.
@@ -58,6 +111,11 @@ Setup once: `pnpm install` and `uv sync` from the repo root.
 uv run uvicorn main:app --host 0.0.0.0 --port 8080 --app-dir api --reload
 ```
 Needs `DEEPGRAM_API_KEY` and `GEMINI_API_KEY` in a gitignored `.env` at the repo root (see `.env.example`), loaded via python-dotenv. Without them `/api/analyze` returns 502 (ASR) or 500 (analyst) with the reason in the log; `/api/healthz` still works and reports both active models.
+
+Those are prototype endpoints and credentials. Production replaces the
+synchronous upload with `/api/v1` session creation, signed R2 upload,
+confirmation, polling, and Celery processing. Do not write instructions as if
+those routes or OpenAI/Clerk/Render credentials already exist.
 
 **Mobile app** — point it at the API with `EXPO_PUBLIC_API_URL`, a **full origin including the scheme**:
 ```
@@ -78,20 +136,72 @@ typecheck script. There is still no typecheck, lint or import check for the Pyth
 **Dependency check:** `npx expo-doctor` from `mobile/` — currently 18/18. It validates peer
 deps that plain import-scanning misses, which is what makes it safe to prune `package.json`.
 
+**Tests:** `pnpm test` from `mobile/` — 31 assertions × 7 timezones. Uses node's built-in
+`node:test` with `--experimental-strip-types`, so there is **no test framework dependency** and
+nothing to configure; that is why `lib/` imports carry explicit `.ts` extensions and
+`allowImportingTsExtensions` is on. Only `lib/` is covered so far, because only `lib/` is pure —
+the timezone bugs it pins were found in minutes once tests existed. `api/metrics.py` is the
+obvious next target (pure, no keys, no network, and every trend line depends on it) and has
+**no coverage at all**. Neither does the Python backend have lint or typecheck.
+PRD §9.10 additionally requires API contract, auth/RLS, outbox/idempotency,
+state-machine, deletion, recovery, and real-device tests; none exists yet.
+
 ## Stack
 
-- Mobile: Expo / expo-router / React Native, react-native-svg, reanimated 4 (+ react-native-worklets), AsyncStorage
+### Prototype — current repository
+
+- Mobile: Expo / expo-router / React Native, React Context, react-native-svg,
+  reanimated 4 (+ react-native-worklets), AsyncStorage for sessions and words
+- `@tanstack/react-query` is mounted in `app/_layout.tsx` but does not own session
+  data yet; do not assume cloud caching or sync exists
 - Audio: **expo-audio** (`useAudioRecorder`, `createAudioPlayer`) — migrated off expo-av; **do not reintroduce expo-av**
 - Recording config lives in `constants/recording.ts`, not a preset. **iOS records uncompressed 16kHz mono PCM WAV; Android cannot** — MediaRecorder exposes no uncompressed container, so it falls back to 16kHz mono AAC and its acoustic metrics are measurably worse. Don't "fix" the asymmetry by putting iOS back on AAC.
 - Backend: Python 3.12 FastAPI, `uv`-managed. Three modules: `main.py` (routing), `asr.py` (provider adapter), `metrics.py` (all counting). Seven deps: fastapi, uvicorn, deepgram-sdk, google-genai, wordfreq, python-dotenv, python-multipart.
+
+### Production MVP — PRD §9 target, not in repository
+
+- Mobile: Clerk + SecureStore; TanStack Query server state; Expo SQLite +
+  Drizzle + SQLCipher outbox; FileSystem audio; AsyncStorage only for small
+  non-sensitive preferences
+- Backend: Render FastAPI + Celery + PostgreSQL + persistent Redis; Pydantic v2,
+  SQLAlchemy 2, Psycopg 3, Alembic; private R2
+- API: `/api/v1` REST with an OpenAPI-generated TypeScript client
+- Providers: Deepgram audio transcription; deterministic Python/spaCy metrics;
+  OpenAI text-only production analyst; Expo Push completion notification
 
 ### The pipeline is three stages and the split is deliberate. Don't collapse it.
 
 1. **Transcribe** — `asr.py` → Deepgram Nova-3, `filler_words=true` (keeps the ums), `punctuate=true` (clause-boundary channel), `smart_format=false` (rewrites would break word↔timing correspondence), `mip_opt_out=true` (voice is biometric data). Returns verbatim text plus per-word start/end/confidence. Swap providers via `ASR_PROVIDER`; nothing above `asr.py` knows the vendor.
 2. **Count** — `metrics.py`, in Python, never the model: wordCount, pace, fillerRate, vagueWordDensity, repetition, lexicalDiversity (MATTR window 25), and the pause map. **Don't move a countable metric into a prompt.** The old build did, and the diversity number changed between runs on the same transcript, which makes every trend line in PRD §8 noise.
-3. **Judge** — Gemini, **text only, never audio**: instruction, word upgrades, structure, self-repairs. Keeping audio away from the analyst is also a §11 win — raw voice goes to one vendor, not two.
+3. **Judge** — the prototype uses Gemini, **text only, never audio**, for
+instruction, word upgrades, structure, and self-repairs. Production uses
+OpenAI after the PRD evaluation gate; Gemini becomes development/test-only and
+must never receive customer content. Keeping audio away from the analyst is a
+§11 win — raw voice goes to one vendor, not two.
 
-**On the pause map** (`metrics.analyze_pauses`): every inter-word gap is stored, not just those over threshold, so the threshold can be re-swept without re-transcribing. The PRD's 400ms is a *convention*, not a finding — Gao, Sun & Li (2025) found 200ms best for monologic tasks. `before_zipf` is recorded because a raw pre-content-word count is **confounded**: everyone pauses longer before rarer words (de Jong 2016), so the real metric is the residual after conditioning on word difficulty. Fit that in the nightly F11 job against the user's own history. See `docs/asr-research.md`.
+**On the pause map** (`metrics.analyze_pauses`): every inter-word gap is stored, not just those over threshold, so the threshold can be re-swept without re-transcribing. The current 400ms implementation threshold is a *convention*, not a PRD requirement — Gao, Sun & Li (2025) found 200ms best for monologic tasks, and PRD F5 requires validation on Cadence audio before fixing a production threshold. `before_zipf` is recorded because a raw pre-content-word count is **confounded**: everyone pauses longer before rarer words (de Jong 2016), so the real metric is the residual after conditioning on word difficulty. Fitting that against user history belongs to a future post-MVP trends job, not the current prototype. See `docs/asr-research.md`.
+
+### Migration invariants
+
+When replacing prototype pieces, preserve these contracts:
+
+1. **Three stages:** Transcribe (`asr.py`) → Count (`metrics.py`) → Judge
+   (text-only LLM). Never move countable metrics into a model prompt.
+2. **Durable audio first:** copy the chosen take out of the OS cache before any
+   upload or analysis; never store `recorder.uri` as a durable session path.
+3. **Local calendar days:** use `lib/dates.ts`; never derive a local day with
+   UTC `toISOString().split('T')[0]`.
+4. **Judge normalization:** preserve `_normalise_structure`,
+   `_normalise_word_upgrades`, and `_normalise_repairs` at the API boundary.
+5. **Device-originated identity:** target sessions use UUIDv7 plus a stable
+   idempotency key; replay cannot create another session or analysis.
+6. **Atomic outbox:** chosen-take metadata and the upload operation enter
+   encrypted SQLite in one transaction. Remove the upload row only after the
+   server confirms the canonical session row, not after analysis finishes.
+7. **State ownership:** the phone owns `local`/`uploading`; PostgreSQL owns
+   `queued`/`transcribing`/`measuring`/`coaching`/`ready` and retry/delete states.
+8. **Provider boundary:** Deepgram alone receives production audio; OpenAI alone
+   receives production transcript/evidence text. No shadow customer traffic.
 
 ## Design language — "Ink & Paper"
 
@@ -109,25 +219,31 @@ so the duplication is defensible — but they are still hand-synced. **Still unr
 `brand/kit/logo/svg/cadence-mark-full-color.svg` as canonical and treat `CadenceLogo` as a
 derived transcription of it**, or the two will drift the way three did.
 
-Design origin and screen-level specs live in `docs/design-direction.md` and `docs/onboarding-spec.md`. The onboarding spec covers the 7-step flow, the results-screen ordering, and the four states every screen needs.
+Design origin lives in `docs/design-direction.md`. `docs/onboarding-spec.md` is
+historical and is superseded by PRD §6.2 where they conflict. The prototype has
+a shortened local-only flow with no auth; production has the nine-step
+Clerk/legal/onboarding flow in the PRD.
 
 ## Product stance and voice
 
 - Analysis coaches vocabulary and articulation, **not filler words**. `fillerRate` is displayed as table stakes but never emphasised or turned into a score. Deliberate positioning — keep it.
 - **No emojis in the UI.**
 - Brand voice: warm, encouraging, editorial — like a writing coach, never clinical.
-- PRD §11 requires a line directing users with persistent word-finding difficulty to a qualified professional. It does not exist in the app yet.
+- PRD §11's referral line **ships** as `components/ClinicalNote.tsx`, mounted at the bottom of the results screen and of settings. One component, two mount points, so the wording cannot drift. Deliberately a hairline rule and muted 13px body text rather than a callout — the screen above it has just told someone their point landed late, and an alarm-styled banner there reads as a diagnosis.
 
 ## Gotchas
 
 - In JSX, never leave a trailing `{/* comment */}` after a self-closing element on the same line. The whitespace becomes a text node and crashes native with "Text strings must be rendered within a `<Text>`".
 - App icon and splash changes only appear in real builds, not Expo Go.
 - Expo web: the first screenshot after load can be blank because of entrance animations — wait ~8s and retry.
-- **Recordings are not persisted.** `session.audioUri` points into expo-audio's OS-managed cache, which the OS reclaims and reinstall wipes, so replay silently dies on old sessions. `expo-file-system` is now installed but **not yet wired** — the fix is a `copyAsync` into `documentDirectory` at save time.
+- **Recordings are persisted — keep them that way.** expo-audio writes into the OS cache (`cachesDirectory` on iOS per `AudioRecorder.swift`, `context.cacheDir/Audio` on Android), which the OS reclaims and reinstall wipes. `services/recordings.ts` copies each take to `documentDirectory/recordings/<sessionId>.<ext>` **before** the analyze call, and `session.audioUri` stores that path. Never store `recorder.uri` on a Session. The expo-file-system v19 API is *synchronous* for local ops. Three invariants go with it: `deleteAllRecordings()` runs on clear-sessions and load-sample-data or the audio outlives its sessions at ~1.9MB/min; audio is **not** deleted when analysis fails, so a retry resends rather than re-records; `recordingExists()` seeds the playback error state so pre-fix sessions say "Recording unavailable" up front instead of after a dead tap.
+- **Day keys are local, instants are UTC.** `session.date` stores a full UTC ISO instant (correct — instants are absolute), but every *calendar day* comparison goes through `lib/dates.ts`. Deriving a day key with `toISOString().split('T')[0]` is UTC and shipped a daily user-visible bug: west of UTC an evening session landed on tomorrow's key, so the next morning the app said "Done for today." and skipped the day; east of UTC the window inverted; streaks undercounted by one everywhere but offset zero. `pnpm test` sweeps seven timezones because a suite that runs only in UTC cannot catch this at all.
 - **`ios.bundleIdentifier` / `android.package` are `com.cadenceapp.cadence`.** A bundle ID is permanent once submitted to the App Store, so do not change it casually after the first submission.
 - **Never move the recorder back to a compressed format.** Measured on real audio, an AAC round trip leaves loud speech 0.2% off but quiet passages **14.6%** off, and it stops improving above 128kbps because the encoder discards sub-perceptual detail by design. Those quiet passages are breath and the fading tail of a sentence — F7's `ending: "fade"` and the intensity contour. A 60s PCM recording is ~1.9MB vs ~230KB; that is the price of the measurement.
 - Run `npx expo-doctor` after touching dependencies. It catches missing native peer deps (it found `expo-asset`, absent despite being required by `expo-audio`) that only crash outside Expo Go.
-- FastAPI error bodies use `{"detail": ...}`; `utils/api.ts` parses both `detail` and `error`. Keep both paths.
+- FastAPI error bodies use `{"detail": ...}`; `services/api.ts` parses both `detail` and `error`. Keep both paths.
+- **`EXPO_PUBLIC_*` is inlined by Metro at build time**, not read at runtime. Changing `mobile/.env` needs a full Metro restart — a reload will not pick it up. The recording screen calls `assertApiConfigured()` **before** opening the microphone, because this used to surface only after a full 60-second take, on a misconfiguration no in-app retry could fix.
+- **Never trust the judge's JSON shape.** It parses as valid JSON and still omits required keys — a reply of `{"instruction": "x"}` once produced `structure: {}`, and the client types `pointPlacement` as required and dereferences `.position`. `ErrorBoundary` is mounted only at the app root, so that took down the entire tree. `main.py`'s `_normalise_structure` / `_normalise_word_upgrades` / `_normalise_repairs` coerce every field before it leaves the API. Containing model output inside the judge stage is the point of the three-stage split.
 - `pnpm-workspace.yaml` enforces a 1-day minimum npm release age as supply-chain defense. Don't disable it; use `minimumReleaseAgeExclude` for a specific urgent package.
 
 ---
