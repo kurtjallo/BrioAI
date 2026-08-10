@@ -70,6 +70,11 @@ EXPO_PUBLIC_API_URL=http://<LAN-IP>:8080 pnpm dev
 
 Use `ipconfig getifaddr en0` for a physical iPhone. Simulator: `http://localhost:8080`.
 
+Start the mobile app:
+
+```bash
+cd mobile
+EXPO_PUBLIC_API_URL=http://<LAN-IP>:8080 pnpm dev
 ```
 mobile/   Expo app
 api/      FastAPI prototype
