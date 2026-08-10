@@ -1,4 +1,4 @@
-# Cadence Brand Kit — "Ink & Paper"
+# Brio AI Brand Kit — "Ink & Paper"
 
 The Sticker Asterisk: a playful multi-petal asterisk (yellow #F4C744, blue #3D52B4, pink #E56D93, navy #1E2438 center) on warm cream #FAF7F0.
 

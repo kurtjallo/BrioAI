@@ -1,4 +1,4 @@
-# Cadence
+# Brio AI
 
 A daily speaking-practice mobile app: record a 60-second answer to a daily prompt, get AI feedback on word choice and structure — deliberately **not** filler-word coaching.
 
@@ -28,7 +28,7 @@ A daily speaking-practice mobile app: record a 60-second answer to a daily promp
 - Render: separate FastAPI web and Celery worker services, managed PostgreSQL,
   and persistent Redis as broker only
 - Private R2 audio uploaded from the iPhone through short-lived signed URLs
-- Clerk verifies invite-only identity; a separate Cadence invitation/account
+- Clerk verifies invite-only identity; a separate Brio AI invitation/account
   record gates provisioning and every authenticated API request
 - `/api/v1`; OpenAPI-generated mobile client
 - OpenAI production text analyst; Gemini development/test only and never given
@@ -130,19 +130,18 @@ voice, in-use + accessibility + print), with the five logo concepts as vectors i
 it carried 46 hardcoded hex values that could silently drift from `constants/colors.ts`.
 **Don't rebuild it** — edit the palette in `colors.ts` and regenerate the PDF if the brand moves.
 
-**Typecheck:** `pnpm typecheck` from the root — green. `mobile/` is the only package with a
-typecheck script. There is still no typecheck, lint or import check for the Python backend.
+**Typecheck:** `pnpm typecheck` from the root. It currently fails in
+`app/onboarding.tsx` and `app/recording.tsx` because both still reference
+`/results/[id]` after the route changed to `/results/[sessionId]`. `mobile/` is the only
+package with a typecheck script. There is still no typecheck, lint or import check for the
+Python backend.
 
 **Dependency check:** `npx expo-doctor` from `mobile/` — currently 18/18. It validates peer
 deps that plain import-scanning misses, which is what makes it safe to prune `package.json`.
 
-**Tests:** `pnpm test` from `mobile/` — 31 assertions × 7 timezones. Uses node's built-in
-`node:test` with `--experimental-strip-types`, so there is **no test framework dependency** and
-nothing to configure; that is why `lib/` imports carry explicit `.ts` extensions and
-`allowImportingTsExtensions` is on. Only `lib/` is covered so far, because only `lib/` is pure —
-the timezone bugs it pins were found in minutes once tests existed. `api/metrics.py` is the
-obvious next target (pure, no keys, no network, and every trend line depends on it) and has
-**no coverage at all**. Neither does the Python backend have lint or typecheck.
+**Tests:** there is currently no automated test script or test file in the repository.
+The pure functions in `mobile/lib/` and `api/metrics.py` are the first unit-test targets.
+The Python backend also has no lint or typecheck.
 PRD §9.10 additionally requires API contract, auth/RLS, outbox/idempotency,
 state-machine, deletion, recovery, and real-device tests; none exists yet.
 
@@ -179,7 +178,7 @@ OpenAI after the PRD evaluation gate; Gemini becomes development/test-only and
 must never receive customer content. Keeping audio away from the analyst is a
 §11 win — raw voice goes to one vendor, not two.
 
-**On the pause map** (`metrics.analyze_pauses`): every inter-word gap is stored, not just those over threshold, so the threshold can be re-swept without re-transcribing. The current 400ms implementation threshold is a *convention*, not a PRD requirement — Gao, Sun & Li (2025) found 200ms best for monologic tasks, and PRD F5 requires validation on Cadence audio before fixing a production threshold. `before_zipf` is recorded because a raw pre-content-word count is **confounded**: everyone pauses longer before rarer words (de Jong 2016), so the real metric is the residual after conditioning on word difficulty. Fitting that against user history belongs to a future post-MVP trends job, not the current prototype. See `docs/asr-research.md`.
+**On the pause map** (`metrics.analyze_pauses`): every inter-word gap is stored, not just those over threshold, so the threshold can be re-swept without re-transcribing. The current 400ms implementation threshold is a *convention*, not a PRD requirement — Gao, Sun & Li (2025) found 200ms best for monologic tasks, and PRD F5 requires validation on Brio AI audio before fixing a production threshold. `before_zipf` is recorded because a raw pre-content-word count is **confounded**: everyone pauses longer before rarer words (de Jong 2016), so the real metric is the residual after conditioning on word difficulty. Fitting that against user history belongs to a future post-MVP trends job, not the current prototype. See `docs/asr-research.md`.
 
 ### Migration invariants
 

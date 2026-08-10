@@ -1,6 +1,6 @@
 # Product Requirements Document
 
-**Product:** Cadence
+**Product:** Brio AI
 **Owner:** Solo founder / engineer
 **Status:** Draft v6 — product requirements and production-MVP architecture confirmed
 **Last updated:** August 2026
@@ -16,7 +16,7 @@ gates. Product scope remains the invite-only, iPhone-first beta defined in v5.
 
 ## 0. Document authority
 
-This document is the product source of truth. It states **what Cadence must do**
+This document is the product source of truth. It states **what Brio AI must do**
 and the constraints the implementation must satisfy.
 
 Supporting documents retain depth but do not override this PRD:
@@ -202,7 +202,7 @@ successful.
 
 1. **Invitation and sign-in.** Open the invite, enter email, verify the one-time
    link/code. No password.
-2. **Frame.** Two short lines: what Cadence does and why it is not another
+2. **Frame.** Two short lines: what Brio AI does and why it is not another
    filler-word counter. One action forward.
 3. **Context.** “Where does this bite you most?” Meetings, presentations,
    interviews, or everyday conversation. One tap advances and weights prompts.
@@ -228,13 +228,13 @@ excluding time spent retrieving the email code.
 
 #### F1. Auth
 Clerk provides invite-only, passwordless email sign-in using a one-time link or
-code. Sign-in happens before onboarding and the first recording. Cadence owns
+code. Sign-in happens before onboarding and the first recording. Brio AI owns
 its internal user UUID and maps the Clerk subject to it, so identity can be
 migrated without changing ownership throughout the product.
 
 The founder issues a single-use, expiring invitation. It must be redeemed before
 FastAPI provisions the internal account or permits session creation. Clerk
-verifies identity; Cadence's invitation/account record enforces beta admission
+verifies identity; Brio AI's invitation/account record enforces beta admission
 and disabled-account status on every authenticated request.
 
 - The app follows the device's current local timezone for daily completion and reminders.
@@ -295,7 +295,7 @@ vendor SDK directly.
 | Filler rate | Fillers per 100 words |
 | Word count | Total transcribed words |
 | Pace | Average WPM; a pace curve may be added only if it remains readable and reliable |
-| Pause map | Inter-word gaps classified pre-content-word vs clause-boundary; threshold validated on Cadence audio |
+| Pause map | Inter-word gaps classified pre-content-word vs clause-boundary; threshold validated on Brio AI audio |
 | Hedging density | Fixed lexicon: "sort of", "I think maybe", "kind of", "I guess" |
 
 These numbers describe **this recording only**. The MVP never labels them as
@@ -408,7 +408,7 @@ time. No streak-shaming copy. Never more than one reminder per day.
 
 Analysis-complete notifications are transactional and do not count against the
 one-reminder limit. They go only to the submitting device and reveal no prompt
-or speech content: **“Your Cadence result is ready.”** Tapping opens that session.
+or speech content: **“Your Brio AI result is ready.”** Tapping opens that session.
 
 #### F14. Settings and account controls
 
@@ -540,7 +540,7 @@ flowchart LR
 ```
 
 - **Identity:** Clerk provides invite-only passwordless authentication. FastAPI
-  validates Clerk JWTs and maps the subject to a Cadence-owned UUID.
+  validates Clerk JWTs and maps the subject to a Brio AI-owned UUID.
 - **Compute:** Separate Dockerized FastAPI web and Celery worker services run on
   Render in one private network.
 - **Data:** Render PostgreSQL is the durable source of truth. Persistent Render
@@ -912,7 +912,7 @@ JSONB without Pydantic normalization and validation.
 
 ### 11.5 Safety boundaries
 
-- **No clinical framing.** Cadence is training, not therapy or speech-language pathology.
+- **No clinical framing.** Brio AI is training, not therapy or speech-language pathology.
 - Keep one quiet referral note directing persistent word-finding difficulty to a
   qualified professional.
 - Never diagnose from speech or infer health, politics, religion, ethnicity,
