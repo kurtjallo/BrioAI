@@ -556,7 +556,12 @@ flowchart LR
   Redis, S3-compatible object APIs, REST/OpenAPI, and provider adapters so a
   managed component can be replaced without rewriting product logic.
 
-Base infrastructure may cost up to **$100/month**, excluding ASR and LLM usage.
+The total recurring production operating cost for the 50-account beta must
+remain at or below **$100/month**, including Render compute, PostgreSQL, Redis,
+R2, Deepgram, OpenAI, and production monitoring. Apple Developer Program
+membership, one-time legal review, and development tooling are excluded. M6's
+load/cost test must prove the documented 50-account load profile can operate
+inside this envelope. Raising the cap requires an explicit PRD decision.
 Operational simplicity is preferred over scattering every component across a
 different provider.
 
@@ -714,10 +719,12 @@ OpenAI prompt/response capture and Pydantic request-value capture are explicitly
 disabled in backend telemetry.
 
 Each account may create at most three new session IDs per local day. Automatic
-or manual retries of the same idempotent job do not count. Alert at 50% and 80% of the
-monthly infrastructure/AI budget; at the $100 beta cap, pause new analysis while
-preserving recordings and queued work for founder review. Paused jobs remain
-visibly queued and resume when the founder raises or resets the cap.
+or manual retries of the same idempotent job do not count. Track actual spend
+and projected month-end spend against the single $100 monthly operating cap;
+alert at 50% and 80%. Before additional provider usage would exceed the cap,
+pause new analysis while keeping fixed services available and preserving
+recordings and queued work. Paused jobs remain visibly queued and resume at the
+next monthly budget window or after an explicit PRD cap change.
 
 Render point-in-time recovery is supplemented by a nightly encrypted logical
 PostgreSQL backup in a separate private R2 backup bucket. Logical backups expire
@@ -867,6 +874,8 @@ JSONB without Pydantic normalization and validation.
   used for training but may remain in abuse-monitoring logs for up to 30 days.
   Optional application storage stays disabled. Switch to ZDR after approval and
   verify the setting on the production project and endpoint.
+- Complete the applicable US and Canadian beta legal/privacy review before
+  releasing any invitation to an external tester.
 - Publish plain-language retention, deletion, subprocessors, and support-access
   policies before inviting external testers.
 
@@ -1035,8 +1044,8 @@ the condition before upload, and migrate to verified ZDR when approved.
 | **M3 — Storage and asynchronous analysis** | Signed R2 upload, transactional outbox, Redis/Celery processing, retries, reconciliation, OpenAI analysis, polling, and Expo Push pass duplicate-delivery and failure tests. |
 | **M4 — Mobile migration and product completion** | Auth-first onboarding, Drizzle/SQLCipher outbox, cloud history, background/reconnect sync, bounded playback cache, deletion, and confirmed daily/results/history/calendar/settings/admin flows pass accessibility and real-device process-death tests. |
 | **M5 — Operations and recovery** | Quotas, cost controls, support grants, privacy scrubbing, deletion verification, PITR, 14-day backup expiry, monthly restore drill, and current/previous app compatibility meet the documented SLOs. |
-| **M6 — Invite-only beta** | Load/cost test passes for 50 accounts; Privacy Policy, Terms, subprocessor list, retention, and support-access rules are published; all 50 invitations may be released together; D4, session duration, accuracy/usefulness, latency, failure recovery, cost, and deletion are measured. |
-| **M7 — Public-release decision** | D4 is directionally ≥40%, coaching is trusted, sessions stay under five minutes, privacy/legal review is complete, and no unresolved reliability blocker remains. |
+| **M6 — Invite-only beta** | The documented 50-account load profile fits the $100 monthly operating cap; applicable US and Canadian beta legal/privacy review is complete; Privacy Policy, Terms, subprocessor list, retention, and support-access rules are published; only then may all 50 invitations be released together; D4, session duration, accuracy/usefulness, latency, failure recovery, cost, and deletion are measured. |
+| **M7 — Public-release decision** | D4 is directionally ≥40%, coaching is trusted, sessions stay under five minutes, a separate public-release privacy/legal review is complete, and no unresolved reliability blocker remains. |
 
 Implementation estimates and code changes belong to a separate execution plan
 created only after this PRD and its architecture are approved.
